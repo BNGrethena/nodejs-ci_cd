@@ -45,8 +45,8 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: |
-        scp -i /path/to/your-key.pem app.zip ec2-user@<your-ec2-ip>:/home/ec2-user/nodejs-app
-        ssh -i /path/to/your-key.pem ec2-user@<your-ec2-ip> << EOF
+        scp -i C:\Users\Bhagyasri\Downloads\keypair1.pem app.zip ec2-user@18.168.254.230:/home/ec2-user/nodejs-app
+        ssh -i C:\Users\Bhagyasri\Downloads\keypair1.pem ec2-user@18.168.254.230 << EOF
           cd /home/ec2-user/nodejs-app
           unzip -o app.zip
           npm install --production
