@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Step 1: Checkout repository
+    # Step 1: Checkout code
     - name: Checkout Code
       uses: actions/checkout@v3
 
@@ -28,27 +28,43 @@ jobs:
     - name: Archive Application
       run: zip -r app.zip .
 
+    # Step 5: Upload build artifact
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: app.zip
+        path: app.zip
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
 
     steps:
     # Step 1: Download artifact
-    - name: Download Build
+    - name: Download Build Artifact
       uses: actions/download-artifact@v3
       with:
         name: app.zip
 
-    # Step 2: Deploy to Server
+    # Step 2: Deploy to EC2
     - name: Deploy to EC2
       env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+        USER: ec2-user
+        PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       run: |
-        scp -i C:\Users\Bhagyasri\Downloads\keypair1.pem app.zip ec2-user@18.168.254.230:/home/ec2-user/nodejs-app
-        ssh -i C:\Users\Bhagyasri\Downloads\keypair1.pem ec2-user@18.168.254.230 << EOF
+        # Prepare SSH key
+        mkdir -p ~/.ssh
+        echo "$PRIVATE_KEY" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+
+        # Copy app.zip to EC2 instance
+        scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa app.zip $USER@$EC2_HOST:/home/ec2-user/nodejs-app/
+
+        # SSH into EC2 and deploy
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $USER@$EC2_HOST << EOF
           cd /home/ec2-user/nodejs-app
           unzip -o app.zip
           npm install --production
-          pm2 restart app || pm2 start index.js --name "nodejs-app"
+          pm2 restart nodejs-app || pm2 start index.js --name "nodejs-app"
         EOF
